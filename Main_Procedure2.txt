@@ -1,0 +1,212 @@
+%%Inizialization
+%In this section the maximum and minimum number of user to be selected (NS and NS_min), the daily mean consumption data (data, data_R, data_NR), the measured demand time series (consumptions, consumptions_R, consumptions_NR), the identification and validation subsets are defined.
+NS=100; 
+NS_step=1;
+NS_min=10;
+nr=1067; %Number of residential users
+nnr=nr+1;
+data=load('data\Daily_Consumptions.txt'); % The mean daily consumptions are loaded from a txt file including 2 columns, one for the indexes of the users and one for the consumptions
+data_R=data(1:1067,:); %The users indexes should be ordered according to the type (before all residential users and then non-residential users)
+data_NR=data(1068:end,:); %Non-residential users
+consumptions=load('data\SeriesSM.txt'); %Water demand time seriers from smart meters
+consumptions_R=consumptions(:,1:nr); %Residential consumptions
+consumptions_NR=consumptions(:,nnr:end); %Non-residential consumptions
+idx=[1:24]';
+[consumptions_I,consumptions_V]= splitdataset(consumptions,idx);
+[consumptions_IR,consumptions_VR]= splitdataset(consumptions_R,idx);
+[consumptions_INR,consumptions_VNR]= splitdataset(consumptions_NR,idx);
+datiR2={};
+
+%% Assessment of the number of times (n) to repeat the selection, by using the formula for the determination of the size of statistical samples (Cochran, 1963)
+z=1.96; %z-score
+e=0.05; %error
+s=0.5; %standard deviation
+n=z^2*s*(1-s)/e^2; 
+n=round(n);
+
+%In the following sections the criteria are applied using the related functions, "Identify" and "Verify" functions. Furthermore, the results in terms of R2 are stored and plotted
+
+%% Criterion 1
+R2_c1=[];
+ns=NS_min:NS_step:NS;
+for j=1:length(ns)
+    R2=[];
+  
+    for i=1:n
+        [Selected1]=Criterion1(data,ns(j));
+        [X] = Identify(data,consumptions,Selected1);
+        [r2,dsim]=Verify(data,Selected1,consumptions,X);
+        R2=[R2;r2];
+        
+    end
+    
+    R2_c1=[R2_c1; mean(R2) min(R2) max(R2) var(R2)];
+   
+end
+ns1=ns;
+figure()
+plotperformance(ns1, R2_c1(:,1),R2_c1(:,4), [],[],n)
+title='Criterion1';
+title(title)
+dataR2={R2_c1 title};
+
+%% Criterion2
+R2_c2=[];
+ns=NS_min:NS_step:NS;
+for j=1:length(ns)
+    R2=[];
+    
+    for i=1:n
+        [Selected2, n_over]=Criterion2(data,ns(j));
+        [X] = Identify(data,consumptions,Selected2);
+        [r2]=Verify(data,Selected2,consumptions,X);
+        R2=[R2;r2];
+       
+    end
+    ns(j)=ns(j)-n_over;
+    R2_c2=[R2_c2; mean(R2) min(R2) max(R2) var(R2)];
+   
+end
+ns2=ns;
+figure()
+plotperformance(ns2, R2_c2(:,1),R2_c2(:,4), [],[],n)
+title='Criterion2';
+title(title);
+
+
+dataR2=[dataR2; {R2_c2 title}];
+
+%% Criterion3
+R2_c3=[];
+ns=NS_min:NS_step:NS;
+for j=1:length(ns)
+    R2=[];
+   
+    for i=1:n
+        [Selected3]=Criterion3(data,ns(j));
+        [X] = Identify(data,consumptions,Selected3);
+        [r2]=Verify(data,Selected3,consumptions,X);
+        R2=[R2;r2];
+        
+    end
+    
+    R2_c3=[R2_c3; mean(R2) min(R2) max(R2) var(R2)];
+   
+end
+ns3=ns;
+figure()
+plotperformance(ns3, R2_c3(:,1),R2_c3(:,4),[],[],n)
+title='Criterion3';
+title(title);
+
+dataR2=[dataR2; {R2_c3 title}];
+
+%% Criterion4 
+R2_c4=[];
+R2_c4_I=[];
+ns=NS_min:NS_step:NS;
+for j=1:length(ns)
+    R2=[];
+ 
+        [Selected4]=Criterion4(data,ns(j));
+        [X] = Identify(data,consumptions,Selected4);
+        [r2]=Verify(data,Selected4,consumptions,X);
+        R2=[R2;r2];
+        
+    R2_c4=[R2_c4; mean(R2) min(R2) max(R2) var(R2)];
+    
+end
+ns4=ns;
+figure()
+plotperformance(ns4, R2_c4(:,1),R2_c4(:,4), [],[],n)
+title='Criterion4';
+title(title);
+
+dataR2=[dataR2; {R2_c4 title}];
+
+%% Criterion5
+R2_c5=[];
+t_r=0.76; %Residential user rate
+t_nr=0.24; %Non-residential user rate
+ns=NS_min:NS_step:NS;
+for j=1:length(ns)
+    R2=[];
+  
+    for i=1:n
+        [Selected5, n_over]=Criterion5(data_R,data_NR,ns(j),t_r);
+        [X] = Identify(data,consumptions,Selected5);
+        [r2]=Verify(data,Selected5,consumptions,X);
+        R2=[R2;r2];
+      
+    end
+    ns(j)=ns(j)-n_over;
+    R2_c5=[R2_c5; mean(R2) min(R2) max(R2) var(R2)];
+   
+end
+ns5=ns;
+figure()
+plotperformance(ns5, R2_c5(:,1),R2_c5(:,4), [],[],n)
+title='Criterion5';
+title(title);
+
+dataR2=[dataR2; {R2_c5 title}];
+
+%% Criterion6
+
+R2_c6=[];
+
+t_r=0.76;
+t_nr=0.24;
+ns=NS_min:NS_step:NS;
+for j=1:length(ns)
+    R2=[];
+ 
+    for i=1:n
+        [Selected6,n_over]=Criterion6(data_R,data_NR,ns(j),t_r,t_nr);
+        [X] = Identify(data,consumptions_I,Selected6);
+        [r2]=Verify(data,Selected6,consumptions,X);
+        R2=[R2;r2];
+        
+    end
+    ns(j)=ns(j)-n_over;
+    R2_c6=[R2_c6; mean(R2) min(R2) max(R2) var(R2)];
+
+end
+ns6=ns;
+figure()
+plotperformance(ns6, R2_c6(:,1),R2_c6(:,4), [],[],n)
+title='Criterion6';
+title(title);
+
+dataR2=[dataR2; {R2_c6 title}];
+
+ %% Criterion7
+R2_c7=[];
+R2_c7_I=[];
+t_r=0.76;
+t_nr=0.24;
+ns=NS_min:NS_step:NS;
+for j=1:length(ns)
+    R2=[];
+
+        [Selected7,n_over]=Criterion7(data_R,data_NR,ns(j),t_r,t_nr);
+        [X] = Identify(data,consumptions,Selected7);
+        [r2]=Verify(data,Selected7,consumptions,X);
+        R2=[R2;r2];
+    
+    ns(j)=ns(j)-n_over;
+    R2_c7=[R2_c7; mean(R2) min(R2) max(R2) var(R2)];
+  
+end
+ns7=ns;
+figure()
+hold on
+plotperformance(ns7, R2_c7(:,1),R2_c7(:,4), [],[],n)
+title='Criterion7';
+title(title);
+
+dataR2=[dataR2; {R2_c7 title}];
+
+%% save
+
+save('Criteria_risults')

@@ -1,0 +1,120 @@
+%Plot of the patterns of R2 obtained using different criteria for each number of selected users.
+C1=datiR2{1,1};
+R2_1=C1(:,1);
+C2=datiR2{2,1};
+R2_2=C2(:,1);
+C3=datiR2{3,1};
+R2_3=C3(:,1);
+C4=datiR2{4,1};
+R2_4=C4(:,1);
+C5=datiR2{5,1};
+R2_5=C5(:,1);
+C6=datiR2{6,1};
+R2_6=C6(:,1);
+C7=datiR2{7,1};
+R2_7=C7(:,1);
+plot(ns,R2_1,'-k','LineWidth',1,'DisplayName','Criterion1');
+xlabel('N')
+ylabel('R^2')
+grid on
+hold on
+plot(ns,R2_2,'--k','LineWidth',1,'DisplayName','Criterion2');
+plot(ns,R2_3,'-.k','LineWidth',1,'DisplayName','Criterion3');
+plot(ns,R2_4,':k','LineWidth',1,'DisplayName','Criterion4');
+plot(ns,R2_5,'--','LineWidth',1,'Color',[0.4,0.4,0.4],'DisplayName','Criterion5');
+plot(ns,R2_6,'-.','LineWidth',1,'Color',[0.4,0.4,0.4],'DisplayName','Criterion6');
+plot(ns,R2_7,':','LineWidth',1,'Color',[0.4,0.4,0.4],'DisplayName','Criterion7');
+
+
+
+
+%Plot of temporal patterns for measured aggregated hourly demands and for aggregated hourly demands obtained by the selection of different number of users (e.g. 25, 50 and 100) through the application of both the stepwise regression and the Best Criterion.
+consumptions=load('data\SeriesSM.txt');
+data=load('dati\Daily_Consumptions.txt');
+selected_25=load('dati\selected_25.txt'); %Load the txt file reporting the indexes of the selected users
+selected_o25=selected_25(:,2); %Users selected through the application of the stepwise regression
+selected_c25=selected_25(:,1); %Users selected through the application of the Best Criterion
+[X_o25,R2_o25,dsim_o25,dtot] = lsidentify(data,consumptions,selected_o25);
+[X_c25,R2_c25,dsim_c25] = identify(data,consumptions,selected_c25);
+ 
+selected_50=load('data\selected_50.txt');
+selected_o50=selected_50(:,2);
+selected_c50=selected_50(:,1);
+[X_o50,R2_o50,dsim_o50,dtot] = lsidentify(data,consumptions,selected_o50);
+[X_c50,R2_c50,dsim_c50,dtot] = identify(data,consumptions,selected_c50);
+
+selected_100=load('data\selected_100.txt');
+selected_o100=selected_100(:,2);
+selected_c100=selected_100(:,1);
+[X_o100,R2_o100,dsim_o100,dtot] = lsidentify(data,consumptions,selected_o100);
+[X_c100,R2_c100,dsim_c100,dtot] = identify(data,consumptions,selected_c100);
+
+h=h(1:168); %Chose the time period for the plot (e.g. weekly temporal patterns)
+figure()
+plot(h,dsim_c25(289:456),':k','DisplayName','Best criterion - 25')
+xlabel('Time(h)')
+ylabel('Demand (m^3/h)')
+axis([0 max(h) 0 max(dtot_m3)])
+grid on
+hold on
+%plot(h,dsim_o25(289:456),':','LineWidth',1,'Color',[0.4,0.4,0.4],'DisplayName','Stepwise selection - 25');
+plot(h,dsim_c50(289:456),'-.k','DisplayName','Best criterion - 50')
+%plot(h,dsim_o50(289:456),'-.','LineWidth',1,'Color',[0.4,0.4,0.4],'DisplayName','Stepwise selection - 50');
+plot(h,dsim_c100(289:456),'--k','DisplayName','Best criterion - 100')
+%plot(h,dsim_o100(289:456),'--','LineWidth',1,'Color',[0.4,0.4,0.4],'DisplayName','Stepwise selection - 100');
+plot(h,dtot_m3(289:456),'-k','DisplayName','Measured demand');
+
+
+
+
+function [X,R2,dsim,dtot] = lsidentify(data,consumptions,selected)
+dtot=sum(consumptions,2);
+idx=find(ismember(data(:,1),selected));
+input=consumptions(:,idx);
+X= lsqnonneg(input,dtot);
+[R2,dsim]=Verify(data,selected,consumptions,X);
+end
+
+
+
+
+function [X,R2,dsim] = identify(data,consumptions,selected)
+dtot=sum(sum(consumptions,2));
+N=length(selected);
+idx=find(ismember(data(:,1),selected));
+input=consumptions(:,idx);
+dtotSM=sum(input,1);
+X= dtot./(N*dtotSM);
+X=X';
+[R2,dsim]=Verify(data,selected,consumptions,X);
+end
+
+
+
+
+function [R2,dsim,dtot]=Verify(data,selected,consumptions,X)
+dtot=sum(consumptions,2);
+idx=find(ismember(data(:,1),selected));
+input=consumptions(:,idx);
+dsim=input*X;
+R2=rsquare(dtot,dsim);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
