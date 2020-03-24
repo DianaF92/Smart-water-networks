@@ -8,4 +8,4 @@ Procedure 1: it enables assessment of the minimum number of users to be monitore
 
 Procedure 2: it allows to identify the users to be monitored starting from users’ billed annual demand; it includes different criteria for users selection and a linear model parameterized on the basis of the billed annual demands.  
 
-For further explanations make reference to Fiorillo, D., Galuppini, G., Creaco, E., De Paola, F. and Giugni, M. Identification of influential user locations for smart meter installation to reconstruct the urban demand pattern. Journal of Water Resources Planning and Management (under review).
+For further explanations make reference to Fiorillo, D., Galuppini, G., Creaco, E., De Paola, F. and Giugni, M. Identification of influential user locations for smart meter installation to reconstruct the urban demand pattern. Journal of Water Resources Planning and Management (accepted).
